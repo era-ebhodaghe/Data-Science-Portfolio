@@ -1,0 +1,277 @@
+---
+title: "Final Project Step 2"
+author: "Era Ebhodaghe"
+date: "2024-08-04"
+output: pdf_document
+---
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+
+```
+
+### Research Questions Updated
+
+* Are there economical factors that could affect life expectancy?
+* What countries have the highest life expectancy and what country has the lowest life expectancy? What is the possible reason for this?
+* Does Alcohol affect life expectancy?
+* Does BMI affect life expectancy?
+* Does the education level impact how long we live?
+
+```{r}
+#importing libraries
+library(ggplot2)
+library(magrittr)
+library(caTools)
+library(class)
+library(purrr)
+theme_set(theme_minimal())
+library(mlbench)
+library(readr)
+```
+
+### Data loading and cleaning
+```{r}
+
+#Loading first dataset from WHO
+Life_exp_WHO <- 
+read.csv("/Users/valuedcustomer/Documents/Bellvue/DSC 520/Final Project/Life Expectancy Data 2.csv")
+
+```
+
+```{r}
+library(dplyr)
+Worldbank_data <- 
+read.csv('/Users/valuedcustomer/Documents/Bellvue/DSC 520/Final Project/Worldbankdata.csv')
+
+#Renaming country column
+Worldbank_data <- as_tibble(Worldbank_data)
+names(Worldbank_data)[names(Worldbank_data) == "Country.Name"] <- "Country"
+
+#combining data
+combined_df1 <- Life_exp_WHO %>%
+    inner_join(Worldbank_data, by = c("Country"="Country"))
+
+```
+
+### What does the final dataset look like
+```{r}
+#loading final dataset and joining all 3 datasets
+
+dataset3 <- read.csv('/Users/valuedcustomer/Downloads/Life_exp_gender.csv')
+data_final <- combined_df1 %>%
+    inner_join(dataset3, by = c("Country"="Country"))
+prefix_to_remove <- "X"
+data_final <- select(data_final, -starts_with(prefix_to_remove))
+head(data_final)
+
+```
+### What information is not self-evident?
+
+For now, most of the information in the data set is self evident. However, in this last week I hope to dive deeper into the analysis and I am sure that there will be information found that is not self evident
+
+### What are different ways you could look at this data?
+I will be creating new variables as applicable
+
+### How do you plan to slice and dice the data?
+
+The dataset is quite structured and minimal data manipulation is required. However, if time permits I will be addressing null values and dealing with outliers 
+### How could you summarize your data to answer key questions?
+
+I will be summarizing my data using descriptive statistics of all variables
+
+```{r}
+summary(data_final)
+```
+
+### What types of plots and tables will help you illustrate the findings to your questions?
+
+```{r}
+#histogram plot for life expectancy
+ggplot(data_final, aes(Life.expectancy)) + 
+    labs(title = "Plot of Life Expectancy", 
+        x = "Life expectancy", y = "Frequency") +
+    geom_histogram(bins = 10, aes(y = ..density..), color = "darkblue", fill = "darkblue") +
+    stat_function(fun = dnorm, 
+                  args = list(mean = mean(data_final$Life.expectancy, na.rm = TRUE), 
+                              sd = sd(data_final$Life.expectancy, na.rm = TRUE)),
+                              color = 'red', size = 1)
+```
+
+
+```{r}
+
+#histogram plot of Alcohol
+ggplot(data_final, aes(Alcohol)) + 
+    labs(title = "Histogram of Alcohol Consumption", 
+        x = "Alcohol Consumption per capita in litres", y = "Frequency") +
+    geom_histogram(bins = 10, aes(y = ..density..), color = "darkblue", fill = "darkblue") +
+    stat_function(fun = dnorm, 
+                  args = list(mean = mean(data_final$Alcohol, na.rm = TRUE), 
+                              sd = sd(data_final$Alcohol, na.rm = TRUE)),
+                              color = 'red', size = 1)
+```
+
+
+```{r}
+
+#histogram plot of Schooling
+ggplot(data_final, aes(Schooling)) + 
+    labs(title = "Years of Schooling and Life Expectancy", 
+        x = "Years of Schooling", y = "Frequency") +
+    geom_histogram(bins = 10, aes(y = ..density..), color = "darkblue", fill = "darkblue") +
+    stat_function(fun = dnorm, 
+                  args = list(mean = mean(data_final$Schooling, na.rm = TRUE), 
+                              sd = sd(data_final$Schooling, na.rm = TRUE)),
+                              color = 'red', size = 1)
+
+```
+```{r}
+#histogram plot for BMI and life expectancy
+ggplot(data_final, aes(BMI)) + 
+    labs(title = "BMI and Life Expectancy", 
+        x = "BMI", y = "Frequency") +
+    geom_histogram(bins = 10, aes(y = ..density..), color = "darkblue", fill = "darkblue") +
+    stat_function(fun = dnorm, 
+                  args = list(mean = mean(data_final$BMI, na.rm = TRUE), 
+                              sd = sd(data_final$BMI, na.rm = TRUE)),
+                              color = 'red', size = 1)
+```
+
+```{r}
+#histogram plot for Adult Mortality and life expectancy
+ggplot(data_final, aes(Adult.Mortality)) + 
+    labs(title = "Adult Mortality and life expectancy", 
+        x = "Adult Mortality", y = "Frequency") +
+    geom_histogram(bins = 10, aes(y = ..density..), color = "darkblue", fill = "darkblue") +
+    stat_function(fun = dnorm, 
+                  args = list(mean = mean(data_final$Adult.Mortality, na.rm = TRUE), 
+                              sd = sd(data_final$Adult.Mortality, na.rm = TRUE)),
+                              color = 'red', size = 1)
+```
+
+```{r}
+
+#histogram plot for Total Expenditure
+ggplot(data_final, aes(Total.expenditure)) + 
+    labs(title = "Histogram plot for Total Expenditure", 
+        x = "Total Expenditure", y = "Frequency") +
+    geom_histogram(bins = 10, aes(y = ..density..), color = "darkblue", fill = "darkblue") +
+    stat_function(fun = dnorm, 
+                  args = list(mean = mean(data_final$BMI, na.rm = TRUE), 
+                              sd = sd(data_final$BMI, na.rm = TRUE)),
+                              color = 'red', size = 1)
+
+```
+## Creating scatter plots to visualize the relationship between life expectancy and other variables
+
+```{r}
+#Scatter plot of life expectancy and Alcohol
+scatter <- ggplot(data_final, aes(Life.expectancy, Alcohol))
+scatter + geom_point() +
+    scale_x_continuous(n.breaks = 10) +
+    geom_smooth(method = 'lm', alpha = 0.1) +
+                    labs(x = "Life expectancy", y = "Alcohol consumption") +
+    ggtitle('Plot of Alcohol consumption and Life Expectancy')
+```
+
+```{r}
+#Scatter plot of life expectancy and Schooling
+scatter <- ggplot(data_final, aes(Life.expectancy, Schooling))
+scatter + geom_point() +
+    scale_x_continuous(n.breaks = 10) +
+    geom_smooth(method = 'lm', alpha = 0.1) +
+                    labs(x = "Life expectancy", y = "Schooling") +
+    ggtitle('Plot of Schooling and Life Expectancy')
+```
+```{r}
+#Scatter plot of life expectancy and BMI
+scatter <- ggplot(data_final, aes(Life.expectancy, BMI))
+scatter + geom_point() +
+    scale_x_continuous(n.breaks = 10) +
+    geom_smooth(method = 'lm', alpha = 0.1) +
+                    labs(x = "Life expectancy", y = "BMI") +
+    ggtitle('Plot of BMI and Life Expectancy')
+```
+
+```{r}
+
+#Scatter plot of life expectancy and adult mortality
+scatter <- ggplot(data_final, aes(Life.expectancy, Adult.Mortality))
+scatter + geom_point() +
+    scale_x_continuous(n.breaks = 10) +
+    geom_smooth(method = 'lm', alpha = 0.1) +
+                    labs(x = "Life expectancy", y = "Adult Mortality") +
+    ggtitle('Plot of Adult Mortality and Life Expectancy')
+```
+```{r}
+#Scatter plot of life expectancy and Total expenditure
+scatter <- ggplot(data_final, aes(Life.expectancy,Total.expenditure))
+scatter + geom_point() +
+    scale_x_continuous(n.breaks = 10) +
+    geom_smooth(method = 'lm', alpha = 0.1) +
+                    labs(x = "Life expectancy", y = "Total Expenditure") +
+    ggtitle('Plot of Adult Mortality and Total Expenditure')
+```
+
+
+
+
+## Checking Correlation using Corr function
+
+```{r}
+#Correlation test for Alcohol and Life expectancy
+Alcohol_corr <- cor.test(data_final$Life.expectancy, 
+                         data_final$Alcohol, use = "complete.obs")
+Alcohol_corr
+
+```
+
+```{r}
+#Correlation test for Schooling and Life expectancy
+Schooling_corr <- cor.test(data_final$Life.expectancy, 
+                           data_final$Schooling, use = "complete.obs")
+Schooling_corr
+
+```
+
+```{r}
+#Correlation test for BMI and Life expectancy
+BMI_corr <- cor.test(data_final$Life.expectancy, 
+                     data_final$BMI, use = "complete.obs")
+BMI_corr
+```
+
+```{r}
+#Correlation test for Adult Mortality and Life expectancy
+AdultMortality_corr <- cor.test(data_final$Life.expectancy, 
+                                data_final$Adult.Mortality, use = "complete.obs")
+AdultMortality_corr
+```
+
+```{r}
+#Correlation test for Total Expenditure and Life expectancy
+Totalexp_corr <- cor.test(data_final$Life.expectancy,
+                          data_final$Total.expenditure, use = "complete.obs")
+Totalexp_corr
+```
+```{r}
+#Correlation test for all variables
+cor(data_final[,unlist(lapply(data_final,
+                              is.numeric))], use = "complete.obs")
+```
+
+### Do you plan on incorporating any machine learning techniques to answer your research questions? Explain.
+
+Yes, I will be using multiple linear regression to further analyze my data
+```{r}
+data_final.model <- lm(Life.expectancy ~ Alcohol + Schooling 
+                       + BMI + Adult.Mortality + Total.expenditure, data = data_final)
+
+summary(data_final.model)
+
+```
+
+### Questions for future steps.
+
+I will need to carry out more research with additional data sets to examine other factors that could affect life expectancy
